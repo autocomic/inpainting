@@ -16,6 +16,17 @@ from .utils import create_mask
 from scipy import ndimage
 import cv2
 
+def canny(image, sigma=0.33):
+	# compute the median of the single channel pixel intensities
+	v = np.median(image)
+	# apply automatic Canny edge detection using the computed median
+	lower = int(max(0, (1.0 - sigma) * v))
+	upper = int(min(255, (1.0 + sigma) * v))
+	edged = cv2.Canny(image, lower, upper)
+	# return the edged image
+	return edged
+
+
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, config, flist, line_flist, mask_flist, augment=True, training=True):
@@ -115,6 +126,11 @@ class Dataset(torch.utils.data.Dataset):
     def load_line(self, img, index, mask):
 
         line = imread(self.line_data[index], pilmode='L')
+        print(line)
+        img = np.uint8(img * 255)
+
+        line = 255 - canny(img)
+        print(line)
         scale = img.shape[0]/line.shape[0]
         h, w = img.shape[:2] 
         line = cv2.resize(line, (w, h), interpolation=cv2.INTER_LINEAR)
