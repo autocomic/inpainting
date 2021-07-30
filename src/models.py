@@ -55,13 +55,13 @@ class SemanticInpaintingModel(BaseModel):
         self.iters = 3
         self.grained = 1/config.SHRIK_ITERS
 
-    def forward(self, screen_masked, edges_masked, masks):
-        noise = torch.randn_like(masks)
-        inputs = torch.cat((screen_masked, edges_masked, masks, noise), dim=1)
-        output_image, output_edge = self.generator(inputs.detach())
-        return output_image, output_edge
+    #def forward(self, screen_masked, edges_masked, masks):
+    #    noise = torch.randn_like(masks)
+    #    inputs = torch.cat((screen_masked, edges_masked, masks, noise), dim=1)
+    #    output_image, output_edge = self.generator(inputs.detach())
+    #    return output_image, output_edge
 
-    def test(self, screen_masked, edges_masked, masks):
+    def forward(self, screen_masked, edges_masked, masks):
         output_images, output_edges = [],[]
         noise = torch.randn_like(masks)
         # grained = 0.2

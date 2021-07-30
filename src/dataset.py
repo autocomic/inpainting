@@ -126,11 +126,12 @@ class Dataset(torch.utils.data.Dataset):
     def load_line(self, img, index, mask):
 
         line = imread(self.line_data[index], pilmode='L')
-        print(line)
-        img = np.uint8(img * 255)
+        if False:
+            print(line)
+            img = np.uint8(img * 255)
 
-        line = 255 - canny(img)
-        print(line)
+            line = 255 - canny(img)
+            print(line)
         scale = img.shape[0]/line.shape[0]
         h, w = img.shape[:2] 
         line = cv2.resize(line, (w, h), interpolation=cv2.INTER_LINEAR)

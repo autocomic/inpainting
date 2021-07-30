@@ -57,7 +57,7 @@ class ScreenVAE(nn.Module):
         wp = (w+pad-1) //pad*pad
         return F.pad(im, (0, wp-w, 0, hp-h), mode='constant',value=1)
 
-    def forward(self, x, line=None, screen=False, rep=False):
+    def forward(self, x, line=None, screen=False, rep=True):
         if line is None:
             line = torch.ones_like(x)
         else:

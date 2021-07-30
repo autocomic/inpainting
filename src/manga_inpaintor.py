@@ -9,11 +9,19 @@ from .svae import ScreenVAE
 import torch.nn.functional as F
 from .morphology import Dilation2d, Erosion2d
 
+def export(model, name, inputs):
+    model.eval()
+    scripted = torch.jit.trace(model, inputs)
+    scripted.save(f"{name}.pt")
+    print("SAVED TRACE:", name)
 
 class MangaInpaintor():
     def __init__(self, config):
         self.config = config
 
+        #self.semantic_inpaint_model = torch.jit.load("./semantic_inpaint_model.pt").to(config.DEVICE)
+        #self.manga_inpaint_model = torch.jit.load("./manga_inpaint_model.pt").to(config.DEVICE)
+        #self.svae_model = torch.jit.load("./svae_model.pt").to(config.DEVICE)
         self.semantic_inpaint_model = SemanticInpaintingModel(config).to(config.DEVICE)
         self.manga_inpaint_model = MangaInpaintingModel(config).to(config.DEVICE)
         self.svae_model = ScreenVAE().to(config.DEVICE)
@@ -54,20 +62,25 @@ class MangaInpaintor():
             manga_masked = (images * (1 - masks)) + masks
             lines_masked = (lines * (1 - masks)) + masks
 
-            screen_masked = self.svae_model(manga_masked, lines_masked, rep=True)
-            screen0 = self.svae_model(images, lines, rep=True)
-
+            screen_masked = self.svae_model(manga_masked, lines_masked)
+            screen0 = self.svae_model(images, lines)
+            export(self.svae_model, "svae_model", (images, lines))
+            del self.svae_model
+            torch.cuda.empty_cache()
             manga_masked = (images * (1 - masks)) + masks
             lines_masked = (lines * (1 - masks)) + masks
 
-            screenl, linesl, masksl = self.semantic_inpaint_model.test(screen_masked, lines_masked, masks)
-
+            screenl, linesl, masksl = self.semantic_inpaint_model(screen_masked, lines_masked, masks)
+            export(self.semantic_inpaint_model, "semantic_inpaint_model", (screen_masked, lines_masked, masks))
+            del self.semantic_inpaint_model
+            torch.cuda.empty_cache()
             screen = screenl[-1]
             lines = linesl[-1]
             screen_decode = screen_masked *(1-masks) + screen * masks
             lines_decode = lines_masked *(1-masks) + lines * masks
-            
+
             outputs = self.manga_inpaint_model(images, torch.cat([screen, lines],1), masks)
+            export(self.manga_inpaint_model, "semantic_inpaint_modell", (images, torch.cat([screen, lines],1), masks))
             outputs_merged = (outputs * masks) + (images * (1 - masks))
             outputs_merged_l = (outputs_merged + 1)*(lines+1)/2 -1
 
